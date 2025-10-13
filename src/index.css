@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+.btn { @apply bg-orange-500 text-white py-2 px-3 rounded; }
+.btn-made { @apply bg-green-500 text-white py-3 rounded; }
+.btn-miss { @apply bg-red-500 text-white py-3 rounded; }
+.btn-danger { @apply bg-red-600 text-white py-2 px-3 rounded; }
+.btn-sm { @apply bg-gray-100 py-1 px-2 rounded text-sm; }
+.btn-ghost { @apply bg-transparent p-1; }
+.input { @apply border p-2 rounded w-full; }
+.danger { @apply bg-red-600 text-white; }
