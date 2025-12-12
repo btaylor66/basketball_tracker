@@ -4,6 +4,7 @@ import { loadData, saveData, saveCurrentGame, loadCurrentGame, clearCurrentGame 
 import HomeView from './components/HomeView'
 import TeamsView from './components/TeamsView'
 import PlayersView from './components/PlayersView'
+import CloudSettings from './components/CloudSettings'
 import TeamDetail from './components/TeamDetail'
 import PlayerDetail from './components/PlayerDetail'
 import NewGame from './components/NewGame'
@@ -365,9 +366,10 @@ export default function App () {
   // route
   return (
     <>
-      {view === 'home' && <HomeView currentGame={currentGame} setView={setView} exportAll={exportAll} importAll={importAll} startQuickGame={startQuickGame} />}
+      {view === 'home' && <HomeView currentGame={currentGame} setView={setView} startQuickGame={startQuickGame} />}
       {view === 'teams' && <TeamsView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deleteTeam={deleteTeam} newTeamName={newTeamName} setNewTeamName={setNewTeamName} createTeam={createTeam} />}
       {view === 'players' && <PlayersView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} setSelectedPlayer={setSelectedPlayer} />}
+      {view === 'cloudSettings' && <CloudSettings setView={setView} exportAll={exportAll} importAll={importAll} />}
       {view === 'teamDetail' && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
       {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} />}
       {view === 'newGame' && <NewGame teams={teams} formData={formData} setFormData={setFormData} startNewGame={startNewGame} setView={setView} />}
