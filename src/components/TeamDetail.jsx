@@ -1,7 +1,7 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 
-export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, editGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
+export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
       <div className="max-w-md w-full">
@@ -49,7 +49,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
                 return (
                   <div key={game.id} className="border-2 border-orange-300 rounded overflow-hidden bg-orange-50">
                     <div
-                      onClick={() => editGame(game)}
+                      onClick={() => viewGame(game)}
                       className="p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
                     >
                       <div className="flex items-center justify-between mb-1">

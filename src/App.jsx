@@ -10,6 +10,7 @@ import PlayerDetail from './components/PlayerDetail'
 import NewGame from './components/NewGame'
 import LiveGame from './components/LiveGame'
 import EditGame from './components/EditGame'
+import GameDetail from './components/GameDetail'
 import { calculatePlayerStats } from './utils/calculations'
 
 const defaultStats = () => ({
@@ -36,6 +37,7 @@ export default function App () {
   const [games, setGames] = useState([])
   const [currentGame, setCurrentGame] = useState(null)
   const [editingGame, setEditingGame] = useState(null)
+  const [viewingGame, setViewingGame] = useState(null)
   const [selectedTeam, setSelectedTeam] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -241,11 +243,12 @@ export default function App () {
     setDeleteConfirmId(null)
   }
 
+  const viewGame = (g) => { setViewingGame(g); setView('gameDetail') }
   const editGame = (g) => { setEditingGame(g); setView('editGame') }
 
   const saveEditedGame = () => {
     const ng = games.map(g => g.id === editingGame.id ? editingGame : g)
-    forceSaveGames(ng); setEditingGame(null); setView(selectedPlayer ? 'playerDetail' : 'teamDetail')
+    forceSaveGames(ng); setEditingGame(null); setViewingGame(null); setView(selectedPlayer ? 'playerDetail' : 'teamDetail')
   }
 
   // Helper to get friendly stat names
@@ -370,8 +373,9 @@ export default function App () {
       {view === 'teams' && <TeamsView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deleteTeam={deleteTeam} newTeamName={newTeamName} setNewTeamName={setNewTeamName} createTeam={createTeam} />}
       {view === 'players' && <PlayersView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} setSelectedPlayer={setSelectedPlayer} />}
       {view === 'cloudSettings' && <CloudSettings setView={setView} exportAll={exportAll} importAll={importAll} />}
-      {view === 'teamDetail' && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
-      {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} />}
+      {view === 'teamDetail' && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
+      {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} />}
+      {view === 'gameDetail' && <GameDetail game={viewingGame} setView={setView} setEditingGame={setEditingGame} selectedPlayer={selectedPlayer} teams={teams} createTeam={createTeam} addPlayer={addPlayer} saveEditedGame={saveEditedGame} />}
       {view === 'newGame' && <NewGame teams={teams} formData={formData} setFormData={setFormData} startNewGame={startNewGame} setView={setView} />}
       {view === 'liveGame' && <LiveGame currentGame={currentGame} timeElapsed={timeElapsed} setView={setView} setIsPlaying={setIsPlaying} isPlaying={isPlaying} updateStat={updateStat} undoLast={undoLast} saveFinishedGame={saveFinishedGame} lastAction={lastAction} transactions={transactions} deleteTransaction={deleteTransaction} updateGameInfo={updateGameInfo} teams={teams} />}
       {view === 'editGame' && <EditGame editingGame={editingGame} setEditingGame={setEditingGame} saveEditedGame={saveEditedGame} selectedPlayer={selectedPlayer} setView={setView} teams={teams} createTeam={createTeam} addPlayer={addPlayer} />}

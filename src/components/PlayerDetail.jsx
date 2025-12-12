@@ -2,7 +2,7 @@ import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { formatTime, calculatePlayerStats } from '../utils/calculations'
 
-export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, games, editGame, exportGame, deleteConfirmId, setDeleteConfirmId, setFormData, formData, currentGame }) {
+export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, setFormData, formData, currentGame }) {
   const stats = calculatePlayerStats(games, selectedPlayer?.id)
   const hasActiveGame = currentGame && currentGame.playerId === selectedPlayer?.id
   return (
@@ -103,7 +103,7 @@ export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, g
               return (
                 <div key={game.id} className="border-2 border-orange-300 rounded overflow-hidden bg-orange-50">
                   <div
-                    onClick={() => editGame(game)}
+                    onClick={() => viewGame(game)}
                     className="p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
                   >
                     <div className="flex items-center justify-between mb-1">
