@@ -3,6 +3,7 @@ import { formatTime } from './utils/calculations'
 import { loadData, saveData, saveCurrentGame, loadCurrentGame, clearCurrentGame } from './utils/storage'
 import HomeView from './components/HomeView'
 import TeamsView from './components/TeamsView'
+import PlayersView from './components/PlayersView'
 import TeamDetail from './components/TeamDetail'
 import PlayerDetail from './components/PlayerDetail'
 import NewGame from './components/NewGame'
@@ -20,6 +21,7 @@ const defaultStats = () => ({
   threePointersMissed: 0,
   defensiveRebounds: 0,
   offensiveRebounds: 0,
+  assists: 0,
   steals: 0,
   blocks: 0,
   turnovers: 0,
@@ -40,6 +42,7 @@ export default function App () {
   const [copiedGameId, setCopiedGameId] = useState(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [lastAction, setLastAction] = useState(null)
+  const [transactions, setTransactions] = useState([])
   const [newTeamName, setNewTeamName] = useState('')
   const [newPlayerName, setNewPlayerName] = useState('')
   const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5), teamId: '', playerId: '', opponent: '' })
@@ -92,13 +95,20 @@ export default function App () {
     const nt = [...teams, t]
     setTeams(nt)
     saveData('teams', nt)
-    return t
+    return t.id
   }
 
   const addPlayer = (teamId, playerName) => {
-    const nt = teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { id: Date.now(), name: playerName }] } : t)
+    const playerId = Date.now()
+    const nt = teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { id: playerId, name: playerName }] } : t)
     setTeams(nt)
     saveData('teams', nt)
+    // Update selectedTeam if it matches
+    const updatedTeam = nt.find(t => t.id === teamId)
+    if (selectedTeam?.id === teamId && updatedTeam) {
+      setSelectedTeam(updatedTeam)
+    }
+    return playerId
   }
 
   const deleteTeam = (teamId) => {
@@ -111,6 +121,11 @@ export default function App () {
     const nt = teams.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t)
     const ng = games.filter(g => g.playerId !== playerId)
     setTeams(nt); forceSaveGames(ng); setDeleteConfirmId(null)
+    // Update selectedTeam if it matches
+    const updatedTeam = nt.find(t => t.id === teamId)
+    if (selectedTeam?.id === teamId && updatedTeam) {
+      setSelectedTeam(updatedTeam)
+    }
   }
 
   // Games
@@ -128,17 +143,94 @@ export default function App () {
       time: data.time,
       stats: defaultStats()
     }
-    setCurrentGame(g); setTimeElapsed(0); setView('liveGame')
+    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setView('liveGame')
   }
 
-  const saveFinishedGame = () => {
+  const startQuickGame = () => {
+    const today = new Date()
+    const g = {
+      id: Date.now(),
+      teamId: null,
+      playerId: null,
+      teamName: '',
+      playerName: 'Quick Game',
+      opponent: 'Opponent',
+      date: today.toISOString().split('T')[0],
+      time: today.toTimeString().slice(0, 5),
+      stats: defaultStats(),
+      isQuickGame: true
+    }
+    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setIsPlaying(true); setView('liveGame')
+  }
+
+  const updateGameInfo = (playerName, opponent) => {
     if (!currentGame) return
-    const ng = [...games, currentGame]
+    setCurrentGame({
+      ...currentGame,
+      playerName,
+      opponent
+    })
+  }
+
+  const saveFinishedGame = (playerScore, teamScore, opponentPlayerScore, opponentTeamScore, teamId = null, playerId = null) => {
+    if (!currentGame) return
+
+    // Determine win/loss/tie result based on team scores
+    let result = 'loss'
+    if (teamScore > opponentTeamScore) result = 'win'
+    else if (teamScore === opponentTeamScore) result = 'tie'
+
+    // For quick games that are being associated, update team/player info
+    let finalGame = { ...currentGame }
+    if (currentGame.isQuickGame && teamId && playerId) {
+      const team = teams.find(t => t.id === teamId)
+      const player = team?.players.find(p => p.id === playerId)
+      if (team && player) {
+        finalGame = {
+          ...finalGame,
+          teamId,
+          playerId,
+          teamName: team.name,
+          playerName: player.name,
+          isQuickGame: false // No longer a quick game once associated
+        }
+      }
+    }
+
+    // Add all scores and result to game data
+    const gameWithScores = {
+      ...finalGame,
+      playerScore,
+      teamScore,
+      opponentPlayerScore,
+      opponentTeamScore,
+      result
+    }
+
+    const ng = [...games, gameWithScores]
     forceSaveGames(ng)
-    // navigate to player detail
-    const team = teams.find(t => t.id === currentGame.teamId)
-    const player = team?.players.find(p => p.id === currentGame.playerId)
-    if (team && player) { setSelectedTeam(team); setSelectedPlayer(player); setView('playerDetail') } else setView('home')
+
+    // Navigate based on game type and association
+    if (teamId && playerId) {
+      // If associated with team/player, go to player detail
+      const team = teams.find(t => t.id === teamId)
+      const player = team?.players.find(p => p.id === playerId)
+      if (team && player) {
+        setSelectedTeam(team)
+        setSelectedPlayer(player)
+        setView('playerDetail')
+      } else {
+        setView('home')
+      }
+    } else if (!currentGame.isQuickGame) {
+      // Regular games navigate to player detail
+      const team = teams.find(t => t.id === currentGame.teamId)
+      const player = team?.players.find(p => p.id === currentGame.playerId)
+      if (team && player) { setSelectedTeam(team); setSelectedPlayer(player); setView('playerDetail') } else setView('home')
+    } else {
+      // Unassociated quick games go back to home
+      setView('home')
+    }
     setCurrentGame(null); setIsPlaying(false); clearCurrentGame()
   }
 
@@ -155,10 +247,41 @@ export default function App () {
     forceSaveGames(ng); setEditingGame(null); setView(selectedPlayer ? 'playerDetail' : 'teamDetail')
   }
 
+  // Helper to get friendly stat names
+  const getStatLabel = (stat, points) => {
+    const labels = {
+      freeThrowsMade: 'FT +',
+      freeThrowsMissed: 'FT -',
+      twoPointersMade: '2PT +',
+      twoPointersMissed: '2PT -',
+      threePointersMade: '3PT +',
+      threePointersMissed: '3PT -',
+      offensiveRebounds: 'OReb',
+      defensiveRebounds: 'DReb',
+      assists: 'Ast',
+      steals: 'Stl',
+      blocks: 'Blk',
+      turnovers: 'TO',
+      fouls: 'Foul'
+    }
+    return labels[stat] || stat
+  }
+
   // Live game stat updates
   const updateStat = (stat, points = 0) => {
     if (!currentGame) return
-    setLastAction({ stat, points })
+    const newStatTotal = (currentGame.stats[stat] || 0) + 1
+    const transaction = {
+      id: Date.now(),
+      stat,
+      points,
+      label: getStatLabel(stat, points),
+      timestamp: timeElapsed,
+      totalPoints: (currentGame.stats.points || 0) + points,
+      statTotal: newStatTotal
+    }
+    setLastAction(transaction)
+    setTransactions(prev => [...prev, transaction])
     setCurrentGame(cg => {
       const nstats = { ...cg.stats, [stat]: cg.stats[stat] + 1, points: cg.stats.points + points }
       const ncg = { ...cg, stats: nstats }
@@ -176,7 +299,26 @@ export default function App () {
       saveCurrentGame(ncg)
       return ncg
     })
+    setTransactions(prev => prev.slice(0, -1))
     setLastAction(null)
+  }
+
+  const deleteTransaction = (transactionId) => {
+    const transaction = transactions.find(t => t.id === transactionId)
+    if (!transaction || !currentGame) return
+
+    setCurrentGame(cg => {
+      const nstats = {
+        ...cg.stats,
+        [transaction.stat]: Math.max(0, cg.stats[transaction.stat] - 1),
+        points: Math.max(0, cg.stats.points - transaction.points)
+      }
+      const ncg = { ...cg, stats: nstats }
+      saveCurrentGame(ncg)
+      return ncg
+    })
+    setTransactions(prev => prev.filter(t => t.id !== transactionId))
+    if (lastAction?.id === transactionId) setLastAction(null)
   }
 
   const exportGame = async (g) => {
@@ -191,7 +333,7 @@ export default function App () {
     const fgPct = fgAtt > 0 ? ((fgMade / fgAtt) * 100).toFixed(1) : '0'
     const ftAtt = s.freeThrowsMade + s.freeThrowsMissed
     const ftPct = ftAtt > 0 ? ((s.freeThrowsMade / ftAtt) * 100).toFixed(1) : '0'
-    return `🏀 ${game.playerName} - ${game.teamName} vs ${game.opponent}\n📅 ${game.date} ${game.time}\n\nPoints: ${s.points}\nFG: ${fgMade}/${fgAtt} (${fgPct}%)\n2PT: ${s.twoPointersMade}/${s.twoPointersMade + s.twoPointersMissed}\n3PT: ${s.threePointersMade}/${s.threePointersMade + s.threePointersMissed}\nFT: ${s.freeThrowsMade}/${ftAtt} (${ftPct}%)\nRebounds: ${s.defensiveRebounds + s.offensiveRebounds} (${s.offensiveRebounds}O, ${s.defensiveRebounds}D)\nSteals: ${s.steals}\nBlocks: ${s.blocks}\nTurnovers: ${s.turnovers}\nFouls: ${s.fouls}\nTime: ${formatTime(s.timePlayed)}`
+    return `🏀 ${game.playerName} - ${game.teamName} vs ${game.opponent}\n📅 ${game.date} ${game.time}\n\nPoints: ${s.points}\nFG: ${fgMade}/${fgAtt} (${fgPct}%)\n2PT: ${s.twoPointersMade}/${s.twoPointersMade + s.twoPointersMissed}\n3PT: ${s.threePointersMade}/${s.threePointersMade + s.threePointersMissed}\nFT: ${s.freeThrowsMade}/${ftAtt} (${ftPct}%)\nRebounds: ${s.defensiveRebounds + s.offensiveRebounds} (${s.offensiveRebounds}O, ${s.defensiveRebounds}D)\nAssists: ${s.assists}\nSteals: ${s.steals}\nBlocks: ${s.blocks}\nTurnovers: ${s.turnovers}\nFouls: ${s.fouls}\nTime: ${formatTime(s.timePlayed)}`
   }
 
   const exportAll = () => {
@@ -223,13 +365,14 @@ export default function App () {
   // route
   return (
     <>
-      {view === 'home' && <HomeView currentGame={currentGame} setView={setView} exportAll={exportAll} importAll={importAll} />}
+      {view === 'home' && <HomeView currentGame={currentGame} setView={setView} exportAll={exportAll} importAll={importAll} startQuickGame={startQuickGame} />}
       {view === 'teams' && <TeamsView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deleteTeam={deleteTeam} newTeamName={newTeamName} setNewTeamName={setNewTeamName} createTeam={createTeam} />}
+      {view === 'players' && <PlayersView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} setSelectedPlayer={setSelectedPlayer} />}
       {view === 'teamDetail' && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
-      {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} />}
+      {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} editGame={editGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} />}
       {view === 'newGame' && <NewGame teams={teams} formData={formData} setFormData={setFormData} startNewGame={startNewGame} setView={setView} />}
-      {view === 'liveGame' && <LiveGame currentGame={currentGame} timeElapsed={timeElapsed} setView={setView} setIsPlaying={setIsPlaying} isPlaying={isPlaying} updateStat={updateStat} undoLast={undoLast} saveFinishedGame={saveFinishedGame} lastAction={lastAction} />}
-      {view === 'editGame' && <EditGame editingGame={editingGame} setEditingGame={setEditingGame} saveEditedGame={saveEditedGame} selectedPlayer={selectedPlayer} setView={setView} />}
+      {view === 'liveGame' && <LiveGame currentGame={currentGame} timeElapsed={timeElapsed} setView={setView} setIsPlaying={setIsPlaying} isPlaying={isPlaying} updateStat={updateStat} undoLast={undoLast} saveFinishedGame={saveFinishedGame} lastAction={lastAction} transactions={transactions} deleteTransaction={deleteTransaction} updateGameInfo={updateGameInfo} teams={teams} />}
+      {view === 'editGame' && <EditGame editingGame={editingGame} setEditingGame={setEditingGame} saveEditedGame={saveEditedGame} selectedPlayer={selectedPlayer} setView={setView} teams={teams} createTeam={createTeam} addPlayer={addPlayer} />}
     </>
   )
 }

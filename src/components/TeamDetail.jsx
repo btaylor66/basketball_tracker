@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react'
 
 export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, editGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
   return (
-    <div className="h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-start overflow-hidden">
-      <div className="max-w-md w-full mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
+      <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
             <button onClick={() => setView('teams')} className="btn-ghost"><ArrowLeft /></button>
@@ -13,14 +13,23 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
           </div>
           <div className="space-y-2">
             {selectedTeam?.players.map(p => (
-              <div key={p.id} className="p-3 border rounded flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">{p.name}</div>
+              <div key={p.id} className="border-2 border-orange-300 rounded flex items-center justify-between overflow-hidden bg-orange-50">
+                <div
+                  onClick={() => { setSelectedPlayer(p); setView('playerDetail') }}
+                  className="flex-1 p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
+                >
+                  <div className="font-semibold text-orange-900">{p.name}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setSelectedPlayer(p); setView('playerDetail') }} className="btn-sm">Open</button>
-                  <button onClick={() => { if (deleteConfirmId === p.id) deletePlayer(selectedTeam.id, p.id); else { setDeleteConfirmId(p.id); setTimeout(() => setDeleteConfirmId(null), 3000) } }} className={`btn-sm ${deleteConfirmId === p.id ? 'danger' : ''}`}>{deleteConfirmId === p.id ? 'Confirm?' : 'Delete'}</button>
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (deleteConfirmId === p.id) deletePlayer(selectedTeam.id, p.id)
+                    else { setDeleteConfirmId(p.id); setTimeout(() => setDeleteConfirmId(null), 3000) }
+                  }}
+                  className={`px-4 py-3 text-sm ${deleteConfirmId === p.id ? 'bg-red-600 text-white' : 'text-red-600'}`}
+                >
+                  {deleteConfirmId === p.id ? 'Confirm?' : 'Delete'}
+                </button>
               </div>
             ))}
           </div>
@@ -31,19 +40,61 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Team Games</h3>
             <div className="space-y-2">
-              {games.filter(g => g.teamId === selectedTeam?.id).map(game => (
-                <div key={game.id} className="p-3 border rounded flex items-center justify-between">
-                  <div>
-                    <div className="text-lg font-bold">{game.stats.points}</div>
-                    <div className="text-xs text-gray-500">{game.playerName} vs {game.opponent}</div>
+              {games.filter(g => g.teamId === selectedTeam?.id).sort((a, b) => {
+                const dateA = new Date(`${a.date} ${a.time || '00:00'}`)
+                const dateB = new Date(`${b.date} ${b.time || '00:00'}`)
+                return dateB - dateA
+              }).map(game => {
+                const totalReb = (game.stats.offensiveRebounds || 0) + (game.stats.defensiveRebounds || 0)
+                return (
+                  <div key={game.id} className="border-2 border-orange-300 rounded overflow-hidden bg-orange-50">
+                    <div
+                      onClick={() => editGame(game)}
+                      className="p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="text-2xl font-bold text-blue-600">{game.playerScore ?? game.stats.points}</div>
+                          {game.result && (
+                            <span className={`text-xs font-bold px-2 py-1 rounded ${
+                              game.result === 'win' ? 'bg-green-100 text-green-700' :
+                              game.result === 'loss' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {game.result.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400">{game.date}</div>
+                      </div>
+                      <div className="text-sm font-semibold mb-1">
+                        {game.playerName} vs {game.opponent}
+                        {game.teamScore !== undefined && game.opponentTeamScore !== undefined ? (
+                          <span className="text-gray-500 ml-2">({game.teamScore} - {game.opponentTeamScore})</span>
+                        ) : game.opponentScore !== undefined && (
+                          <span className="text-gray-500 ml-2">({game.playerScore ?? game.stats.points} - {game.opponentScore})</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {totalReb} REB • {game.stats.assists || 0} AST • {game.stats.steals || 0} STL • {game.stats.blocks || 0} BLK
+                      </div>
+                    </div>
+                    <div className="flex border-t">
+                      <button onClick={(e) => { e.stopPropagation(); exportGame(game) }} className="flex-1 py-2 text-xs text-blue-600 hover:bg-blue-50">Export</button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (deleteConfirmId === game.id) deleteGame(game.id)
+                          else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), 3000) }
+                        }}
+                        className={`flex-1 py-2 text-xs border-l ${deleteConfirmId === game.id ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
+                      >
+                        {deleteConfirmId === game.id ? 'Confirm?' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => editGame(game)} className="btn-sm">Edit</button>
-                    <button onClick={() => exportGame(game)} className="btn-sm">Export</button>
-                    <button onClick={() => { if (deleteConfirmId === game.id) deleteGame(game.id); else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), 3000) } }} className={`btn-sm ${deleteConfirmId === game.id ? 'danger' : ''}`}>{deleteConfirmId === game.id ? 'Confirm?' : 'Delete'}</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>

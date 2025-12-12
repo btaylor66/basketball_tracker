@@ -24,13 +24,28 @@ export const calculatePlayerStats = (games, playerId) => {
     gamesPlayed: playerGames.length,
     ppg: (totals.points / playerGames.length).toFixed(1),
     rpg: ((totals.defensiveRebounds + totals.offensiveRebounds) / playerGames.length).toFixed(1),
+    apg: ((totals.assists || 0) / playerGames.length).toFixed(1),
     fgPct: fgAtt > 0 ? ((fgMade / fgAtt) * 100).toFixed(1) : 0,
     twoPct: twoAtt > 0 ? ((totals.twoPointersMade / twoAtt) * 100).toFixed(1) : 0,
     threePct: threeAtt > 0 ? ((totals.threePointersMade / threeAtt) * 100).toFixed(1) : 0,
     ftPct: ftAtt > 0 ? ((totals.freeThrowsMade / ftAtt) * 100).toFixed(1) : 0,
-    totalPoints: totals.points,
-    totalRebounds: totals.defensiveRebounds + totals.offensiveRebounds,
-    totalSteals: totals.steals,
-    totalBlocks: totals.blocks
+    // Cumulative totals
+    totalPoints: totals.points || 0,
+    totalRebounds: (totals.defensiveRebounds || 0) + (totals.offensiveRebounds || 0),
+    totalOffensiveRebounds: totals.offensiveRebounds || 0,
+    totalDefensiveRebounds: totals.defensiveRebounds || 0,
+    totalAssists: totals.assists || 0,
+    totalSteals: totals.steals || 0,
+    totalBlocks: totals.blocks || 0,
+    totalTurnovers: totals.turnovers || 0,
+    totalFouls: totals.fouls || 0,
+    totalFGMade: fgMade,
+    totalFGAttempted: fgAtt,
+    total2PTMade: totals.twoPointersMade || 0,
+    total2PTAttempted: twoAtt,
+    total3PTMade: totals.threePointersMade || 0,
+    total3PTAttempted: threeAtt,
+    totalFTMade: totals.freeThrowsMade || 0,
+    totalFTAttempted: ftAtt
   }
 }

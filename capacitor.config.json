@@ -1,0 +1,6 @@
+{
+  "appId": "solutions.righttackle.basketball",
+  "appName": "Basketball Tracker",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

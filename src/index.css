@@ -2,7 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+html, body, #root {
+  height: 100%;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
+}
+
+/* iOS safe area support */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
 
 .btn { @apply bg-orange-500 text-white py-2 px-3 rounded; }
 .btn-made { @apply bg-green-500 text-white py-3 rounded; }

@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react'
 
 export default function NewGame ({ teams, formData, setFormData, startNewGame, setView }) {
   return (
-    <div className="h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-start overflow-hidden">
-      <div className="max-w-md w-full mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
+      <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
             <button onClick={() => setView('home')} className="btn-ghost"><ArrowLeft /></button>
