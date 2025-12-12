@@ -1,8 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Play, Pause, History, X } from 'lucide-react'
 import { formatTime } from '../utils/calculations'
+import { KeepAwake } from '@capacitor-community/keep-awake'
+import { Capacitor } from '@capacitor/core'
 
 export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlaying, isPlaying, updateStat, undoLast, saveFinishedGame, lastAction, transactions, deleteTransaction, updateGameInfo, teams }) {
+  const isNative = Capacitor.isNativePlatform()
+
+  // Keep screen awake during live game on native platforms
+  useEffect(() => {
+    if (isNative) {
+      KeepAwake.keepAwake().catch(err => console.error('KeepAwake error:', err))
+
+      return () => {
+        KeepAwake.allowSleep().catch(err => console.error('AllowSleep error:', err))
+      }
+    }
+  }, [])
   const [showHistory, setShowHistory] = useState(false)
   const [showScoreDialog, setShowScoreDialog] = useState(false)
   const [teamScore, setTeamScore] = useState('')
