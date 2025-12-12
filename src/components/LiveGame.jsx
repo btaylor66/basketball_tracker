@@ -4,7 +4,7 @@ import { formatTime } from '../utils/calculations'
 import { KeepAwake } from '@capacitor-community/keep-awake'
 import { Capacitor } from '@capacitor/core'
 
-export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlaying, isPlaying, updateStat, undoLast, saveFinishedGame, lastAction, transactions, deleteTransaction, updateGameInfo, teams }) {
+export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, setCurrentGame, setView, setIsPlaying, isPlaying, updateStat, undoLast, saveFinishedGame, lastAction, transactions, deleteTransaction, updateGameInfo, teams }) {
   const isNative = Capacitor.isNativePlatform()
 
   // Keep screen awake during live game on native platforms
@@ -29,6 +29,9 @@ export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlay
   const [editOpponent, setEditOpponent] = useState('')
   const [selectedTeamId, setSelectedTeamId] = useState('')
   const [selectedPlayerId, setSelectedPlayerId] = useState('')
+  const [showEditTime, setShowEditTime] = useState(false)
+  const [editTimeMinutes, setEditTimeMinutes] = useState('')
+  const [editTimeSeconds, setEditTimeSeconds] = useState('')
   const s = currentGame?.stats || {}
   const totalRebounds = (s.offensiveRebounds || 0) + (s.defensiveRebounds || 0)
   const twoPointersMade = s.twoPointersMade || 0
@@ -99,6 +102,32 @@ export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlay
     setShowEditInfo(true)
   }
 
+  const handleEditTime = () => {
+    const minutes = Math.floor(timeElapsed / 60)
+    const seconds = timeElapsed % 60
+    setEditTimeMinutes(minutes.toString())
+    setEditTimeSeconds(seconds.toString())
+    setShowEditTime(true)
+  }
+
+  const handleSaveTime = () => {
+    const minutes = parseInt(editTimeMinutes) || 0
+    const seconds = parseInt(editTimeSeconds) || 0
+    const totalSeconds = (minutes * 60) + seconds
+
+    setTimeElapsed(totalSeconds)
+    if (currentGame) {
+      setCurrentGame({
+        ...currentGame,
+        stats: {
+          ...currentGame.stats,
+          timePlayed: totalSeconds
+        }
+      })
+    }
+    setShowEditTime(false)
+  }
+
   const handleSaveInfo = () => {
     if (editPlayerName.trim() && editOpponent.trim()) {
       updateGameInfo(editPlayerName.trim(), editOpponent.trim())
@@ -121,7 +150,13 @@ export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlay
                 {currentGame?.playerName}
                 {currentGame?.isQuickGame && <span className="text-xs ml-1">✏️</span>}
               </div>
-              <div className="text-xs text-gray-500">{formatTime(timeElapsed)}</div>
+              <div
+                className="text-xs text-gray-500 cursor-pointer hover:text-blue-600"
+                onClick={handleEditTime}
+                title="Click to edit time"
+              >
+                {formatTime(timeElapsed)} ✏️
+              </div>
             </div>
             <button onClick={() => setIsPlaying(p => !p)} className="btn-ghost">
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
@@ -398,6 +433,52 @@ export default function LiveGame ({ currentGame, timeElapsed, setView, setIsPlay
               <div className="flex gap-2 mt-6">
                 <button onClick={() => setShowEditInfo(false)} className="flex-1 btn">Cancel</button>
                 <button onClick={handleSaveInfo} className="flex-1 btn bg-blue-500 text-white">Save</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditTime && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
+              <h3 className="text-lg font-semibold mb-4 text-center">Edit Playing Time</h3>
+
+              <div className="space-y-4">
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold mb-2">Minutes</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editTimeMinutes}
+                      onChange={e => setEditTimeMinutes(e.target.value)}
+                      className="input w-full text-center text-xl"
+                      placeholder="0"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="text-2xl font-bold pt-6">:</div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold mb-2">Seconds</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={editTimeSeconds}
+                      onChange={e => setEditTimeSeconds(e.target.value)}
+                      className="input w-full text-center text-xl"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 text-center">
+                  Current time: {formatTime(timeElapsed)}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <button onClick={() => setShowEditTime(false)} className="flex-1 btn">Cancel</button>
+                <button onClick={handleSaveTime} className="flex-1 btn bg-blue-500 text-white">Save</button>
               </div>
             </div>
           </div>
