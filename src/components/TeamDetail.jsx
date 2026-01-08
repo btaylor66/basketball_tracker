@@ -1,9 +1,19 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { VIEWS } from '../utils/constants'
 import DeleteConfirmButton from './DeleteConfirmButton'
 
 export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
+  const sortedTeamGames = useMemo(() => {
+    return games
+      .filter(g => g.teamId === selectedTeam?.id)
+      .sort((a, b) => {
+        const dateA = new Date(`${a.date} ${a.time || '00:00'}`)
+        const dateB = new Date(`${b.date} ${b.time || '00:00'}`)
+        return dateB - dateA
+      })
+  }, [games, selectedTeam?.id])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
       <div className="max-w-md w-full">
@@ -38,11 +48,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Team Games</h3>
             <div className="space-y-2">
-              {games.filter(g => g.teamId === selectedTeam?.id).sort((a, b) => {
-                const dateA = new Date(`${a.date} ${a.time || '00:00'}`)
-                const dateB = new Date(`${b.date} ${b.time || '00:00'}`)
-                return dateB - dateA
-              }).map(game => {
+              {sortedTeamGames.map(game => {
                 const totalReb = (game.stats.offensiveRebounds || 0) + (game.stats.defensiveRebounds || 0)
                 return (
                   <div key={game.id} className="border-2 border-orange-300 rounded overflow-hidden bg-orange-50">
