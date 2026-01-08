@@ -1,6 +1,7 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { VIEWS, TIMEOUTS } from '../utils/constants'
+import { VIEWS } from '../utils/constants'
+import DeleteConfirmButton from './DeleteConfirmButton'
 
 export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConfirmId, setDeleteConfirmId, deleteTeam, newTeamName, setNewTeamName, createTeam }) {
   return (
@@ -25,16 +26,12 @@ export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConf
                     <div className="font-semibold text-orange-900">{t.name}</div>
                     <div className="text-xs text-orange-600">{t.players.length} players</div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (deleteConfirmId === t.id) deleteTeam(t.id)
-                      else { setDeleteConfirmId(t.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
-                    }}
-                    className={`px-4 py-3 text-sm ${deleteConfirmId === t.id ? 'bg-red-600 text-white' : 'text-red-600'}`}
-                  >
-                    {deleteConfirmId === t.id ? 'Confirm?' : 'Delete'}
-                  </button>
+                  <DeleteConfirmButton
+                    id={t.id}
+                    deleteConfirmId={deleteConfirmId}
+                    setDeleteConfirmId={setDeleteConfirmId}
+                    onDelete={() => deleteTeam(t.id)}
+                  />
                 </div>
               ))
             )}

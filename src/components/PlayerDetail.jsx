@@ -1,7 +1,8 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { formatTime, calculatePlayerStats } from '../utils/calculations'
-import { VIEWS, TIMEOUTS } from '../utils/constants'
+import { calculatePlayerStats } from '../utils/calculations'
+import { VIEWS } from '../utils/constants'
+import DeleteConfirmButton from './DeleteConfirmButton'
 
 export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, setFormData, formData, currentGame, deleteGame }) {
   const stats = calculatePlayerStats(games, selectedPlayer?.id)
@@ -136,16 +137,13 @@ export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, g
                   </div>
                   <div className="flex border-t">
                     <button onClick={(e) => { e.stopPropagation(); exportGame(game) }} className="flex-1 py-2 text-xs text-blue-600 hover:bg-blue-50">Export</button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (deleteConfirmId === game.id) deleteGame(game.id)
-                        else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
-                      }}
-                      className={`flex-1 py-2 text-xs border-l ${deleteConfirmId === game.id ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
-                    >
-                      {deleteConfirmId === game.id ? 'Confirm?' : 'Delete'}
-                    </button>
+                    <DeleteConfirmButton
+                      id={game.id}
+                      deleteConfirmId={deleteConfirmId}
+                      setDeleteConfirmId={setDeleteConfirmId}
+                      onDelete={() => deleteGame(game.id)}
+                      variant="flex"
+                    />
                   </div>
                 </div>
               )

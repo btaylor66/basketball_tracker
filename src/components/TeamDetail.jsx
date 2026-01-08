@@ -1,6 +1,7 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { VIEWS, TIMEOUTS } from '../utils/constants'
+import { VIEWS } from '../utils/constants'
+import DeleteConfirmButton from './DeleteConfirmButton'
 
 export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
   return (
@@ -21,16 +22,12 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
                 >
                   <div className="font-semibold text-orange-900">{p.name}</div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (deleteConfirmId === p.id) deletePlayer(selectedTeam.id, p.id)
-                    else { setDeleteConfirmId(p.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
-                  }}
-                  className={`px-4 py-3 text-sm ${deleteConfirmId === p.id ? 'bg-red-600 text-white' : 'text-red-600'}`}
-                >
-                  {deleteConfirmId === p.id ? 'Confirm?' : 'Delete'}
-                </button>
+                <DeleteConfirmButton
+                  id={p.id}
+                  deleteConfirmId={deleteConfirmId}
+                  setDeleteConfirmId={setDeleteConfirmId}
+                  onDelete={() => deletePlayer(selectedTeam.id, p.id)}
+                />
               </div>
             ))}
           </div>
@@ -82,16 +79,13 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
                     </div>
                     <div className="flex border-t">
                       <button onClick={(e) => { e.stopPropagation(); exportGame(game) }} className="flex-1 py-2 text-xs text-blue-600 hover:bg-blue-50">Export</button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (deleteConfirmId === game.id) deleteGame(game.id)
-                          else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
-                        }}
-                        className={`flex-1 py-2 text-xs border-l ${deleteConfirmId === game.id ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
-                      >
-                        {deleteConfirmId === game.id ? 'Confirm?' : 'Delete'}
-                      </button>
+                      <DeleteConfirmButton
+                        id={game.id}
+                        deleteConfirmId={deleteConfirmId}
+                        setDeleteConfirmId={setDeleteConfirmId}
+                        onDelete={() => deleteGame(game.id)}
+                        variant="flex"
+                      />
                     </div>
                   </div>
                 )
