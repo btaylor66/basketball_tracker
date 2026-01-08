@@ -112,8 +112,8 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
   }
 
   const handleSaveTime = () => {
-    const minutes = parseInt(editTimeMinutes) || 0
-    const seconds = parseInt(editTimeSeconds) || 0
+    const minutes = Math.max(0, parseInt(editTimeMinutes) || 0)
+    const seconds = Math.min(59, Math.max(0, parseInt(editTimeSeconds) || 0))
     const totalSeconds = (minutes * 60) + seconds
 
     setTimeElapsed(totalSeconds)
@@ -452,7 +452,10 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
                       type="number"
                       min="0"
                       value={editTimeMinutes}
-                      onChange={e => setEditTimeMinutes(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (val === '' || parseInt(val) >= 0) setEditTimeMinutes(val)
+                      }}
                       className="input w-full text-center text-xl"
                       placeholder="0"
                       autoFocus
@@ -466,7 +469,11 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
                       min="0"
                       max="59"
                       value={editTimeSeconds}
-                      onChange={e => setEditTimeSeconds(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value
+                        const num = parseInt(val)
+                        if (val === '' || (num >= 0 && num <= 59)) setEditTimeSeconds(val)
+                      }}
                       className="input w-full text-center text-xl"
                       placeholder="0"
                     />
