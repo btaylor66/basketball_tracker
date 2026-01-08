@@ -2,7 +2,7 @@ import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { formatTime, calculatePlayerStats } from '../utils/calculations'
 
-export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, setFormData, formData, currentGame }) {
+export default function PlayerDetail ({ selectedPlayer, selectedTeam, setView, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, setFormData, formData, currentGame, deleteGame }) {
   const stats = calculatePlayerStats(games, selectedPlayer?.id)
   const hasActiveGame = currentGame && currentGame.playerId === selectedPlayer?.id
   return (
