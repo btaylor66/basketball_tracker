@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { formatTime } from './utils/calculations'
 import { loadData, saveData, saveCurrentGame, loadCurrentGame, clearCurrentGame } from './utils/storage'
+import { VIEWS, TIMEOUTS } from './utils/constants'
 import HomeView from './components/HomeView'
 import TeamsView from './components/TeamsView'
 import PlayersView from './components/PlayersView'
@@ -32,7 +33,7 @@ const defaultStats = () => ({
 })
 
 export default function App () {
-  const [view, setView] = useState('home')
+  const [view, setView] = useState(VIEWS.HOME)
   const [teams, setTeams] = useState([])
   const [games, setGames] = useState([])
   const [currentGame, setCurrentGame] = useState(null)
@@ -61,7 +62,7 @@ export default function App () {
     if (cg) {
       setCurrentGame(cg)
       setTimeElapsed(cg.stats.timePlayed || 0)
-      setView('liveGame')
+      setView(VIEWS.LIVE_GAME)
     }
   }, [])
 
@@ -146,7 +147,7 @@ export default function App () {
       time: data.time,
       stats: defaultStats()
     }
-    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setView('liveGame')
+    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setView(VIEWS.LIVE_GAME)
   }
 
   const startQuickGame = () => {
@@ -163,7 +164,7 @@ export default function App () {
       stats: defaultStats(),
       isQuickGame: true
     }
-    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setIsPlaying(true); setView('liveGame')
+    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setIsPlaying(true); setView(VIEWS.LIVE_GAME)
   }
 
   const updateGameInfo = (playerName, opponent) => {
@@ -221,18 +222,18 @@ export default function App () {
       if (team && player) {
         setSelectedTeam(team)
         setSelectedPlayer(player)
-        setView('playerDetail')
+        setView(VIEWS.PLAYER_DETAIL)
       } else {
-        setView('home')
+        setView(VIEWS.HOME)
       }
     } else if (!currentGame.isQuickGame) {
       // Regular games navigate to player detail
       const team = teams.find(t => t.id === currentGame.teamId)
       const player = team?.players.find(p => p.id === currentGame.playerId)
-      if (team && player) { setSelectedTeam(team); setSelectedPlayer(player); setView('playerDetail') } else setView('home')
+      if (team && player) { setSelectedTeam(team); setSelectedPlayer(player); setView(VIEWS.PLAYER_DETAIL) } else setView(VIEWS.HOME)
     } else {
       // Unassociated quick games go back to home
-      setView('home')
+      setView(VIEWS.HOME)
     }
     setCurrentGame(null); setIsPlaying(false); clearCurrentGame()
   }
@@ -243,12 +244,12 @@ export default function App () {
     setDeleteConfirmId(null)
   }
 
-  const viewGame = (g) => { setViewingGame(g); setView('gameDetail') }
-  const editGame = (g) => { setEditingGame(g); setView('editGame') }
+  const viewGame = (g) => { setViewingGame(g); setView(VIEWS.GAME_DETAIL) }
+  const editGame = (g) => { setEditingGame(g); setView(VIEWS.EDIT_GAME) }
 
   const saveEditedGame = () => {
     const ng = games.map(g => g.id === editingGame.id ? editingGame : g)
-    forceSaveGames(ng); setEditingGame(null); setViewingGame(null); setView(selectedPlayer ? 'playerDetail' : 'teamDetail')
+    forceSaveGames(ng); setEditingGame(null); setViewingGame(null); setView(selectedPlayer ? VIEWS.PLAYER_DETAIL : VIEWS.TEAM_DETAIL)
   }
 
   // Helper to get friendly stat names
@@ -327,7 +328,7 @@ export default function App () {
 
   const exportGame = async (g) => {
     const text = formatExportText(g)
-    try { await navigator.clipboard.writeText(text); setCopiedGameId(g.id); setTimeout(() => setCopiedGameId(null), 2000) } catch (e) { alert(text) }
+    try { await navigator.clipboard.writeText(text); setCopiedGameId(g.id); setTimeout(() => setCopiedGameId(null), TIMEOUTS.COPIED_FEEDBACK) } catch (e) { alert(text) }
   }
 
   const formatExportText = (game) => {
@@ -357,7 +358,7 @@ export default function App () {
       try {
         const d = JSON.parse(e.target.result)
         if (d.teams && d.games) {
-          setTeams(d.teams); setGames(d.games); saveData('teams', d.teams); saveData('games', d.games); setView('home')
+          setTeams(d.teams); setGames(d.games); saveData('teams', d.teams); saveData('games', d.games); setView(VIEWS.HOME)
         } else alert('Invalid backup file')
       } catch (err) { alert('Error reading file') }
     }
@@ -369,16 +370,16 @@ export default function App () {
   // route
   return (
     <>
-      {view === 'home' && <HomeView currentGame={currentGame} setView={setView} startQuickGame={startQuickGame} />}
-      {view === 'teams' && <TeamsView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deleteTeam={deleteTeam} newTeamName={newTeamName} setNewTeamName={setNewTeamName} createTeam={createTeam} />}
-      {view === 'players' && <PlayersView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} setSelectedPlayer={setSelectedPlayer} />}
-      {view === 'cloudSettings' && <CloudSettings setView={setView} exportAll={exportAll} importAll={importAll} />}
-      {view === 'teamDetail' && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
-      {view === 'playerDetail' && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} deleteGame={deleteGame} />}
-      {view === 'gameDetail' && <GameDetail game={viewingGame} setView={setView} setEditingGame={setEditingGame} selectedPlayer={selectedPlayer} teams={teams} createTeam={createTeam} addPlayer={addPlayer} saveEditedGame={saveEditedGame} />}
-      {view === 'newGame' && <NewGame teams={teams} formData={formData} setFormData={setFormData} startNewGame={startNewGame} setView={setView} />}
-      {view === 'liveGame' && <LiveGame currentGame={currentGame} timeElapsed={timeElapsed} setTimeElapsed={setTimeElapsed} setCurrentGame={setCurrentGame} setView={setView} setIsPlaying={setIsPlaying} isPlaying={isPlaying} updateStat={updateStat} undoLast={undoLast} saveFinishedGame={saveFinishedGame} lastAction={lastAction} transactions={transactions} deleteTransaction={deleteTransaction} updateGameInfo={updateGameInfo} teams={teams} />}
-      {view === 'editGame' && <EditGame editingGame={editingGame} setEditingGame={setEditingGame} saveEditedGame={saveEditedGame} selectedPlayer={selectedPlayer} setView={setView} teams={teams} createTeam={createTeam} addPlayer={addPlayer} />}
+      {view === VIEWS.HOME && <HomeView currentGame={currentGame} setView={setView} startQuickGame={startQuickGame} />}
+      {view === VIEWS.TEAMS && <TeamsView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deleteTeam={deleteTeam} newTeamName={newTeamName} setNewTeamName={setNewTeamName} createTeam={createTeam} />}
+      {view === VIEWS.PLAYERS && <PlayersView teams={teams} setView={setView} setSelectedTeam={setSelectedTeam} setSelectedPlayer={setSelectedPlayer} />}
+      {view === VIEWS.CLOUD_SETTINGS && <CloudSettings setView={setView} exportAll={exportAll} importAll={importAll} />}
+      {view === VIEWS.TEAM_DETAIL && <TeamDetail selectedTeam={selectedTeam} setView={setView} setSelectedPlayer={setSelectedPlayer} newPlayerName={newPlayerName} setNewPlayerName={setNewPlayerName} addPlayer={addPlayer} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} deletePlayer={deletePlayer} deleteGame={deleteGame} />}
+      {view === VIEWS.PLAYER_DETAIL && <PlayerDetail selectedPlayer={selectedPlayer} selectedTeam={selectedTeam} setView={setView} games={games} viewGame={viewGame} exportGame={exportGame} deleteConfirmId={deleteConfirmId} setDeleteConfirmId={setDeleteConfirmId} setFormData={setFormData} formData={formData} currentGame={currentGame} deleteGame={deleteGame} />}
+      {view === VIEWS.GAME_DETAIL && <GameDetail game={viewingGame} setView={setView} setEditingGame={setEditingGame} selectedPlayer={selectedPlayer} teams={teams} createTeam={createTeam} addPlayer={addPlayer} saveEditedGame={saveEditedGame} />}
+      {view === VIEWS.NEW_GAME && <NewGame teams={teams} formData={formData} setFormData={setFormData} startNewGame={startNewGame} setView={setView} />}
+      {view === VIEWS.LIVE_GAME && <LiveGame currentGame={currentGame} timeElapsed={timeElapsed} setTimeElapsed={setTimeElapsed} setCurrentGame={setCurrentGame} setView={setView} setIsPlaying={setIsPlaying} isPlaying={isPlaying} updateStat={updateStat} undoLast={undoLast} saveFinishedGame={saveFinishedGame} lastAction={lastAction} transactions={transactions} deleteTransaction={deleteTransaction} updateGameInfo={updateGameInfo} teams={teams} />}
+      {view === VIEWS.EDIT_GAME && <EditGame editingGame={editingGame} setEditingGame={setEditingGame} saveEditedGame={saveEditedGame} selectedPlayer={selectedPlayer} setView={setView} teams={teams} createTeam={createTeam} addPlayer={addPlayer} />}
     </>
   )
 }

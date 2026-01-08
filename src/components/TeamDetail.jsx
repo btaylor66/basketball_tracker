@@ -1,5 +1,6 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { VIEWS, TIMEOUTS } from '../utils/constants'
 
 export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, newPlayerName, setNewPlayerName, addPlayer, games, viewGame, exportGame, deleteConfirmId, setDeleteConfirmId, deletePlayer, deleteGame }) {
   return (
@@ -7,7 +8,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setView('teams')} className="btn-ghost"><ArrowLeft /></button>
+            <button onClick={() => setView(VIEWS.TEAMS)} className="btn-ghost"><ArrowLeft /></button>
             <h2 className="text-lg font-semibold">{selectedTeam?.name}</h2>
             <div className="w-8" />
           </div>
@@ -15,7 +16,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
             {selectedTeam?.players.map(p => (
               <div key={p.id} className="border-2 border-orange-300 rounded flex items-center justify-between overflow-hidden bg-orange-50">
                 <div
-                  onClick={() => { setSelectedPlayer(p); setView('playerDetail') }}
+                  onClick={() => { setSelectedPlayer(p); setView(VIEWS.PLAYER_DETAIL) }}
                   className="flex-1 p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
                 >
                   <div className="font-semibold text-orange-900">{p.name}</div>
@@ -24,7 +25,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
                   onClick={(e) => {
                     e.stopPropagation()
                     if (deleteConfirmId === p.id) deletePlayer(selectedTeam.id, p.id)
-                    else { setDeleteConfirmId(p.id); setTimeout(() => setDeleteConfirmId(null), 3000) }
+                    else { setDeleteConfirmId(p.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
                   }}
                   className={`px-4 py-3 text-sm ${deleteConfirmId === p.id ? 'bg-red-600 text-white' : 'text-red-600'}`}
                 >
@@ -85,7 +86,7 @@ export default function TeamDetail ({ selectedTeam, setView, setSelectedPlayer, 
                         onClick={(e) => {
                           e.stopPropagation()
                           if (deleteConfirmId === game.id) deleteGame(game.id)
-                          else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), 3000) }
+                          else { setDeleteConfirmId(game.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
                         }}
                         className={`flex-1 py-2 text-xs border-l ${deleteConfirmId === game.id ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
                       >

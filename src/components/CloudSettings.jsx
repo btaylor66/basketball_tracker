@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Cloud, CloudOff } from 'lucide-react'
 import { syncToICloud, loadFromICloud, checkICloudBackup } from '../utils/storage'
 import { Capacitor } from '@capacitor/core'
+import { VIEWS, TIMEOUTS } from '../utils/constants'
 
 export default function CloudSettings ({ setView, exportAll, importAll }) {
   const [iCloudStatus, setICloudStatus] = useState(null)
@@ -19,7 +20,7 @@ export default function CloudSettings ({ setView, exportAll, importAll }) {
     const result = await syncToICloud()
     setICloudStatus(result.success ? 'success' : 'error')
     if (result.success) setHasBackup(true)
-    setTimeout(() => setICloudStatus(null), 3000)
+    setTimeout(() => setICloudStatus(null), TIMEOUTS.STATUS_MESSAGE)
   }
 
   const handleLoadFromICloud = async () => {
@@ -28,9 +29,9 @@ export default function CloudSettings ({ setView, exportAll, importAll }) {
     const result = await loadFromICloud()
     setICloudStatus(result.success ? 'success' : 'error')
     if (result.success) {
-      setTimeout(() => window.location.reload(), 1000)
+      setTimeout(() => window.location.reload(), TIMEOUTS.RELOAD_DELAY)
     } else {
-      setTimeout(() => setICloudStatus(null), 3000)
+      setTimeout(() => setICloudStatus(null), TIMEOUTS.STATUS_MESSAGE)
     }
   }
 
@@ -38,7 +39,7 @@ export default function CloudSettings ({ setView, exportAll, importAll }) {
     <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setView('home')} className="btn">
+          <button onClick={() => setView(VIEWS.HOME)} className="btn">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-2xl font-bold text-white">Cloud Settings</h1>

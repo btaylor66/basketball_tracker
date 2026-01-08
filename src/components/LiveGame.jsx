@@ -3,6 +3,7 @@ import { ArrowLeft, Play, Pause, History, X } from 'lucide-react'
 import { formatTime } from '../utils/calculations'
 import { KeepAwake } from '@capacitor-community/keep-awake'
 import { Capacitor } from '@capacitor/core'
+import { VIEWS } from '../utils/constants'
 
 export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, setCurrentGame, setView, setIsPlaying, isPlaying, updateStat, undoLast, saveFinishedGame, lastAction, transactions, deleteTransaction, updateGameInfo, teams }) {
   const isNative = Capacitor.isNativePlatform()
@@ -142,7 +143,7 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4 sticky top-0">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => { setView('home'); setIsPlaying(false) }} className="btn-ghost" title="Back to home (game will be saved)">
+            <button onClick={() => { setView(VIEWS.HOME); setIsPlaying(false) }} className="btn-ghost" title="Back to home (game will be saved)">
               <ArrowLeft />
             </button>
             <div className="text-center flex-1">

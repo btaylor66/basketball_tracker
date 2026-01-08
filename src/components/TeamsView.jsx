@@ -1,5 +1,6 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { VIEWS, TIMEOUTS } from '../utils/constants'
 
 export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConfirmId, setDeleteConfirmId, deleteTeam, newTeamName, setNewTeamName, createTeam }) {
   return (
@@ -7,7 +8,7 @@ export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConf
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setView('home')} className="btn-ghost"><ArrowLeft /></button>
+            <button onClick={() => setView(VIEWS.HOME)} className="btn-ghost"><ArrowLeft /></button>
             <h2 className="text-lg font-semibold">Teams</h2>
             <div className="w-8" />
           </div>
@@ -18,7 +19,7 @@ export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConf
               teams.map(t => (
                 <div key={t.id} className="border-2 border-orange-300 rounded flex items-center justify-between overflow-hidden bg-orange-50">
                   <div
-                    onClick={() => { setSelectedTeam(t); setView('teamDetail') }}
+                    onClick={() => { setSelectedTeam(t); setView(VIEWS.TEAM_DETAIL) }}
                     className="flex-1 p-3 cursor-pointer hover:bg-orange-100 active:bg-orange-200"
                   >
                     <div className="font-semibold text-orange-900">{t.name}</div>
@@ -28,7 +29,7 @@ export default function TeamsView ({ teams, setView, setSelectedTeam, deleteConf
                     onClick={(e) => {
                       e.stopPropagation()
                       if (deleteConfirmId === t.id) deleteTeam(t.id)
-                      else { setDeleteConfirmId(t.id); setTimeout(() => setDeleteConfirmId(null), 3000) }
+                      else { setDeleteConfirmId(t.id); setTimeout(() => setDeleteConfirmId(null), TIMEOUTS.DELETE_CONFIRM) }
                     }}
                     className={`px-4 py-3 text-sm ${deleteConfirmId === t.id ? 'bg-red-600 text-white' : 'text-red-600'}`}
                   >

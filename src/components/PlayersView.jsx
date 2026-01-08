@@ -1,5 +1,6 @@
 import React from 'react'
 import { ArrowLeft, User } from 'lucide-react'
+import { VIEWS } from '../utils/constants'
 
 export default function PlayersView ({ teams, setView, setSelectedTeam, setSelectedPlayer }) {
   // Collect all players from all teams
@@ -16,7 +17,7 @@ export default function PlayersView ({ teams, setView, setSelectedTeam, setSelec
     if (team) {
       setSelectedTeam(team)
       setSelectedPlayer(player)
-      setView('playerDetail')
+      setView(VIEWS.PLAYER_DETAIL)
     }
   }
 
@@ -24,7 +25,7 @@ export default function PlayersView ({ teams, setView, setSelectedTeam, setSelec
     <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setView('home')} className="btn">
+          <button onClick={() => setView(VIEWS.HOME)} className="btn">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <h1 className="text-2xl font-bold text-white">Players</h1>

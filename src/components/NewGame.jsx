@@ -1,5 +1,6 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { VIEWS } from '../utils/constants'
 
 export default function NewGame ({ teams, formData, setFormData, startNewGame, setView }) {
   return (
@@ -7,7 +8,7 @@ export default function NewGame ({ teams, formData, setFormData, startNewGame, s
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setView('home')} className="btn-ghost"><ArrowLeft /></button>
+            <button onClick={() => setView(VIEWS.HOME)} className="btn-ghost"><ArrowLeft /></button>
             <h2 className="text-lg font-semibold">New Game</h2>
             <div className="w-8" />
           </div>
