@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { VIEWS, parseId } from '../utils/constants'
 
 export default function EditGame ({ editingGame, setEditingGame, saveEditedGame, selectedPlayer, setView, teams, createTeam, addPlayer }) {
   const [newTeamName, setNewTeamName] = useState('')
@@ -7,7 +8,7 @@ export default function EditGame ({ editingGame, setEditingGame, saveEditedGame,
   const [selectedTeamId, setSelectedTeamId] = useState(editingGame?.teamId || '')
   const [selectedPlayerId, setSelectedPlayerId] = useState(editingGame?.playerId || '')
 
-  const selectedTeam = teams?.find(t => t.id === parseInt(selectedTeamId))
+  const selectedTeam = teams?.find(t => t.id === parseId(selectedTeamId))
   const availablePlayers = selectedTeam?.players || []
   const isQuickGame = editingGame?.isQuickGame
 
@@ -21,7 +22,7 @@ export default function EditGame ({ editingGame, setEditingGame, saveEditedGame,
 
   const handleCreatePlayer = () => {
     if (newPlayerName.trim() && selectedTeamId) {
-      const newPlayerId = addPlayer(parseInt(selectedTeamId), newPlayerName.trim())
+      const newPlayerId = addPlayer(parseId(selectedTeamId), newPlayerName.trim())
       setSelectedPlayerId(newPlayerId)
       setNewPlayerName('')
     }
@@ -30,13 +31,15 @@ export default function EditGame ({ editingGame, setEditingGame, saveEditedGame,
   const handleSave = () => {
     // Update team/player if selected
     if (selectedTeamId && selectedPlayerId) {
-      const team = teams.find(t => t.id === parseInt(selectedTeamId))
-      const player = team?.players.find(p => p.id === parseInt(selectedPlayerId))
+      const teamId = parseId(selectedTeamId)
+      const playerId = parseId(selectedPlayerId)
+      const team = teams.find(t => t.id === teamId)
+      const player = team?.players.find(p => p.id === playerId)
       if (team && player) {
         setEditingGame({
           ...editingGame,
-          teamId: parseInt(selectedTeamId),
-          playerId: parseInt(selectedPlayerId),
+          teamId,
+          playerId,
           teamName: team.name,
           playerName: player.name,
           isQuickGame: false
@@ -51,7 +54,7 @@ export default function EditGame ({ editingGame, setEditingGame, saveEditedGame,
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setView(selectedPlayer ? 'playerDetail' : 'teamDetail')} className="btn-ghost"><ArrowLeft /></button>
+            <button onClick={() => setView(selectedPlayer ? VIEWS.PLAYER_DETAIL : VIEWS.TEAM_DETAIL)} className="btn-ghost"><ArrowLeft /></button>
             <h2 className="text-lg font-semibold">Edit Game</h2>
             <div className="w-8" />
           </div>

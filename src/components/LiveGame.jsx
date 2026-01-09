@@ -3,7 +3,7 @@ import { ArrowLeft, Play, Pause, History, X } from 'lucide-react'
 import { formatTime } from '../utils/calculations'
 import { KeepAwake } from '@capacitor-community/keep-awake'
 import { Capacitor } from '@capacitor/core'
-import { VIEWS } from '../utils/constants'
+import { VIEWS, parseId } from '../utils/constants'
 
 export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, setCurrentGame, setView, setIsPlaying, isPlaying, updateStat, undoLast, saveFinishedGame, lastAction, transactions, deleteTransaction, updateGameInfo, teams }) {
   const isNative = Capacitor.isNativePlatform()
@@ -71,11 +71,13 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
       // Check if linking to existing team/player
       if (selectedTeamId && selectedPlayerId) {
         // Using existing team/player - get names from them
-        const team = teams.find(t => t.id === parseInt(selectedTeamId))
-        const player = team?.players.find(p => p.id === parseInt(selectedPlayerId))
+        const teamId = parseId(selectedTeamId)
+        const playerId = parseId(selectedPlayerId)
+        const team = teams.find(t => t.id === teamId)
+        const player = team?.players.find(p => p.id === playerId)
         if (team && player) {
           updateGameInfo(player.name, opponentTeamName.trim())
-          saveFinishedGame(pScore, tScore, 0, oppTScore, parseInt(selectedTeamId), parseInt(selectedPlayerId))
+          saveFinishedGame(pScore, tScore, 0, oppTScore, teamId, playerId)
         }
       } else {
         // Manual entry - validate names are provided
@@ -94,7 +96,7 @@ export default function LiveGame ({ currentGame, timeElapsed, setTimeElapsed, se
     }
   }
 
-  const selectedTeam = teams.find(t => t.id === parseInt(selectedTeamId))
+  const selectedTeam = teams.find(t => t.id === parseId(selectedTeamId))
   const availablePlayers = selectedTeam?.players || []
 
   const handleEditInfo = () => {

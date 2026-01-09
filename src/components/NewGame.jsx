@@ -1,6 +1,6 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { VIEWS } from '../utils/constants'
+import { VIEWS, parseId } from '../utils/constants'
 
 export default function NewGame ({ teams, formData, setFormData, startNewGame, setView }) {
   return (
@@ -19,7 +19,7 @@ export default function NewGame ({ teams, formData, setFormData, startNewGame, s
             </select>
             <select className="input" value={formData.playerId} onChange={e => setFormData({ ...formData, playerId: e.target.value })}>
               <option value="">Select player</option>
-              {(teams.find(t => t.id === parseInt(formData.teamId))?.players || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {(teams.find(t => t.id === parseId(formData.teamId))?.players || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <input className="input" value={formData.opponent} onChange={e => setFormData({ ...formData, opponent: e.target.value })} placeholder="Opponent" />
             <div className="flex gap-2">

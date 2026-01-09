@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { formatTime } from './utils/calculations'
 import { loadData, saveData, saveCurrentGame, loadCurrentGame, clearCurrentGame } from './utils/storage'
-import { VIEWS, TIMEOUTS } from './utils/constants'
+import { VIEWS, TIMEOUTS, parseId } from './utils/constants'
 import HomeView from './components/HomeView'
 import TeamsView from './components/TeamsView'
 import PlayersView from './components/PlayersView'
@@ -134,12 +134,14 @@ export default function App () {
 
   // Games
   const startNewGame = (data) => {
-    const team = teams.find(t => t.id === parseInt(data.teamId))
-    const player = team?.players.find(p => p.id === parseInt(data.playerId))
+    const teamId = parseId(data.teamId)
+    const playerId = parseId(data.playerId)
+    const team = teams.find(t => t.id === teamId)
+    const player = team?.players.find(p => p.id === playerId)
     const g = {
       id: Date.now(),
-      teamId: parseInt(data.teamId),
-      playerId: parseInt(data.playerId),
+      teamId,
+      playerId,
       teamName: team?.name || '',
       playerName: player?.name || '',
       opponent: data.opponent,
