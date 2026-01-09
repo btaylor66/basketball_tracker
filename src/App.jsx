@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { formatTime } from './utils/calculations'
-import { loadData, saveData, saveCurrentGame, loadCurrentGame, clearCurrentGame } from './utils/storage'
+import { saveCurrentGame, loadCurrentGame, clearCurrentGame } from './utils/storage'
 import { VIEWS, TIMEOUTS, parseId } from './utils/constants'
 import HomeView from './components/HomeView'
 import TeamsView from './components/TeamsView'
@@ -12,7 +12,9 @@ import NewGame from './components/NewGame'
 import LiveGame from './components/LiveGame'
 import EditGame from './components/EditGame'
 import GameDetail from './components/GameDetail'
-import { calculatePlayerStats } from './utils/calculations'
+import useTeamManagement from './hooks/useTeamManagement'
+import useGameTimer from './hooks/useGameTimer'
+import useLiveGameStats from './hooks/useLiveGameStats'
 
 const defaultStats = () => ({
   points: 0,
@@ -34,103 +36,77 @@ const defaultStats = () => ({
 
 export default function App () {
   const [view, setView] = useState(VIEWS.HOME)
-  const [teams, setTeams] = useState([])
-  const [games, setGames] = useState([])
   const [currentGame, setCurrentGame] = useState(null)
   const [editingGame, setEditingGame] = useState(null)
   const [viewingGame, setViewingGame] = useState(null)
-  const [selectedTeam, setSelectedTeam] = useState(null)
-  const [selectedPlayer, setSelectedPlayer] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [timeElapsed, setTimeElapsed] = useState(0)
   const [copiedGameId, setCopiedGameId] = useState(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
-  const [lastAction, setLastAction] = useState(null)
-  const [transactions, setTransactions] = useState([])
   const [newTeamName, setNewTeamName] = useState('')
   const [newPlayerName, setNewPlayerName] = useState('')
-  const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5), teamId: '', playerId: '', opponent: '' })
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().slice(0, 5),
+    teamId: '',
+    playerId: '',
+    opponent: ''
+  })
 
-  const timerRef = useRef(null)
+  // Custom hooks
+  const {
+    teams,
+    setTeams,
+    games,
+    setGames,
+    forceSaveGames,
+    selectedTeam,
+    setSelectedTeam,
+    selectedPlayer,
+    setSelectedPlayer,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    createTeam,
+    addPlayer,
+    deleteTeam,
+    deletePlayer,
+    deleteGame
+  } = useTeamManagement()
 
-  // load data
+  // Timer tick handler - updates currentGame time
+  const handleTimerTick = useCallback((newTime) => {
+    setCurrentGame(cg => cg ? { ...cg, stats: { ...cg.stats, timePlayed: newTime } } : cg)
+  }, [])
+
+  const {
+    isPlaying,
+    setIsPlaying,
+    timeElapsed,
+    setTimeElapsed,
+    resetTimer
+  } = useGameTimer(handleTimerTick)
+
+  const {
+    lastAction,
+    transactions,
+    updateStat,
+    undoLast,
+    deleteTransaction,
+    resetStats
+  } = useLiveGameStats(currentGame, setCurrentGame, timeElapsed)
+
+  // Restore current game on mount
   useEffect(() => {
-    const d = loadData()
-    setTeams(d.teams)
-    setGames(d.games)
     const cg = loadCurrentGame()
     if (cg) {
       setCurrentGame(cg)
       setTimeElapsed(cg.stats.timePlayed || 0)
       setView(VIEWS.LIVE_GAME)
     }
-  }, [])
+  }, [setTimeElapsed])
 
-  // persist teams/games
-  useEffect(() => saveData('teams', teams), [teams])
-  useEffect(() => saveData('games', games), [games])
-
+  // Persist current game
   useEffect(() => {
     if (currentGame) saveCurrentGame(currentGame)
     else clearCurrentGame()
   }, [currentGame])
-
-  useEffect(() => {
-    if (isPlaying) {
-      timerRef.current = setInterval(() => {
-        setTimeElapsed(t => {
-          const nt = t + 1
-          setCurrentGame(cg => cg ? { ...cg, stats: { ...cg.stats, timePlayed: nt } } : cg)
-          return nt
-        })
-      }, 1000)
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [isPlaying])
-
-  // helpers
-  const forceSaveGames = (g) => { setGames(g); saveData('games', g) }
-
-  // Team management
-  const createTeam = (name) => {
-    const t = { id: Date.now(), name, players: [] }
-    const nt = [...teams, t]
-    setTeams(nt)
-    saveData('teams', nt)
-    return t.id
-  }
-
-  const addPlayer = (teamId, playerName) => {
-    const playerId = Date.now()
-    const nt = teams.map(t => t.id === teamId ? { ...t, players: [...t.players, { id: playerId, name: playerName }] } : t)
-    setTeams(nt)
-    saveData('teams', nt)
-    // Update selectedTeam if it matches
-    const updatedTeam = nt.find(t => t.id === teamId)
-    if (selectedTeam?.id === teamId && updatedTeam) {
-      setSelectedTeam(updatedTeam)
-    }
-    return playerId
-  }
-
-  const deleteTeam = (teamId) => {
-    const nt = teams.filter(t => t.id !== teamId)
-    const ng = games.filter(g => g.teamId !== teamId)
-    setTeams(nt); forceSaveGames(ng); setDeleteConfirmId(null)
-  }
-
-  const deletePlayer = (teamId, playerId) => {
-    const nt = teams.map(t => t.id === teamId ? { ...t, players: t.players.filter(p => p.id !== playerId) } : t)
-    const ng = games.filter(g => g.playerId !== playerId)
-    setTeams(nt); forceSaveGames(ng); setDeleteConfirmId(null)
-    // Update selectedTeam if it matches
-    const updatedTeam = nt.find(t => t.id === teamId)
-    if (selectedTeam?.id === teamId && updatedTeam) {
-      setSelectedTeam(updatedTeam)
-    }
-  }
 
   // Games
   const startNewGame = (data) => {
@@ -149,7 +125,10 @@ export default function App () {
       time: data.time,
       stats: defaultStats()
     }
-    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setView(VIEWS.LIVE_GAME)
+    setCurrentGame(g)
+    resetTimer(0)
+    resetStats()
+    setView(VIEWS.LIVE_GAME)
   }
 
   const startQuickGame = () => {
@@ -166,7 +145,11 @@ export default function App () {
       stats: defaultStats(),
       isQuickGame: true
     }
-    setCurrentGame(g); setTimeElapsed(0); setTransactions([]); setIsPlaying(true); setView(VIEWS.LIVE_GAME)
+    setCurrentGame(g)
+    resetTimer(0)
+    resetStats()
+    setIsPlaying(true)
+    setView(VIEWS.LIVE_GAME)
   }
 
   const updateGameInfo = (playerName, opponent) => {
@@ -198,7 +181,7 @@ export default function App () {
           playerId,
           teamName: team.name,
           playerName: player.name,
-          isQuickGame: false // No longer a quick game once associated
+          isQuickGame: false
         }
       }
     }
@@ -218,7 +201,6 @@ export default function App () {
 
     // Navigate based on game type and association
     if (teamId && playerId) {
-      // If associated with team/player, go to player detail
       const team = teams.find(t => t.id === teamId)
       const player = team?.players.find(p => p.id === playerId)
       if (team && player) {
@@ -229,108 +211,50 @@ export default function App () {
         setView(VIEWS.HOME)
       }
     } else if (!currentGame.isQuickGame) {
-      // Regular games navigate to player detail
       const team = teams.find(t => t.id === currentGame.teamId)
       const player = team?.players.find(p => p.id === currentGame.playerId)
-      if (team && player) { setSelectedTeam(team); setSelectedPlayer(player); setView(VIEWS.PLAYER_DETAIL) } else setView(VIEWS.HOME)
+      if (team && player) {
+        setSelectedTeam(team)
+        setSelectedPlayer(player)
+        setView(VIEWS.PLAYER_DETAIL)
+      } else {
+        setView(VIEWS.HOME)
+      }
     } else {
-      // Unassociated quick games go back to home
       setView(VIEWS.HOME)
     }
-    setCurrentGame(null); setIsPlaying(false); clearCurrentGame()
+    setCurrentGame(null)
+    setIsPlaying(false)
+    clearCurrentGame()
   }
 
-  const deleteGame = (gameId) => {
-    const ng = games.filter(g => g.id !== gameId)
-    forceSaveGames(ng)
-    setDeleteConfirmId(null)
+  const viewGame = (g) => {
+    setViewingGame(g)
+    setView(VIEWS.GAME_DETAIL)
   }
 
-  const viewGame = (g) => { setViewingGame(g); setView(VIEWS.GAME_DETAIL) }
-  const editGame = (g) => { setEditingGame(g); setView(VIEWS.EDIT_GAME) }
+  const editGame = (g) => {
+    setEditingGame(g)
+    setView(VIEWS.EDIT_GAME)
+  }
 
   const saveEditedGame = () => {
     const ng = games.map(g => g.id === editingGame.id ? editingGame : g)
-    forceSaveGames(ng); setEditingGame(null); setViewingGame(null); setView(selectedPlayer ? VIEWS.PLAYER_DETAIL : VIEWS.TEAM_DETAIL)
-  }
-
-  // Helper to get friendly stat names
-  const getStatLabel = (stat, points) => {
-    const labels = {
-      freeThrowsMade: 'FT +',
-      freeThrowsMissed: 'FT -',
-      twoPointersMade: '2PT +',
-      twoPointersMissed: '2PT -',
-      threePointersMade: '3PT +',
-      threePointersMissed: '3PT -',
-      offensiveRebounds: 'OReb',
-      defensiveRebounds: 'DReb',
-      assists: 'Ast',
-      steals: 'Stl',
-      blocks: 'Blk',
-      turnovers: 'TO',
-      fouls: 'Foul'
-    }
-    return labels[stat] || stat
-  }
-
-  // Live game stat updates
-  const updateStat = (stat, points = 0) => {
-    if (!currentGame) return
-    const newStatTotal = (currentGame.stats[stat] || 0) + 1
-    const transaction = {
-      id: Date.now(),
-      stat,
-      points,
-      label: getStatLabel(stat, points),
-      timestamp: timeElapsed,
-      totalPoints: (currentGame.stats.points || 0) + points,
-      statTotal: newStatTotal
-    }
-    setLastAction(transaction)
-    setTransactions(prev => [...prev, transaction])
-    setCurrentGame(cg => {
-      const nstats = { ...cg.stats, [stat]: cg.stats[stat] + 1, points: cg.stats.points + points }
-      const ncg = { ...cg, stats: nstats }
-      saveCurrentGame(ncg)
-      return ncg
-    })
-  }
-
-  const undoLast = () => {
-    if (!lastAction || !currentGame) return
-    const { stat, points } = lastAction
-    setCurrentGame(cg => {
-      const nstats = { ...cg.stats, [stat]: Math.max(0, cg.stats[stat] - 1), points: Math.max(0, cg.stats.points - points) }
-      const ncg = { ...cg, stats: nstats }
-      saveCurrentGame(ncg)
-      return ncg
-    })
-    setTransactions(prev => prev.slice(0, -1))
-    setLastAction(null)
-  }
-
-  const deleteTransaction = (transactionId) => {
-    const transaction = transactions.find(t => t.id === transactionId)
-    if (!transaction || !currentGame) return
-
-    setCurrentGame(cg => {
-      const nstats = {
-        ...cg.stats,
-        [transaction.stat]: Math.max(0, cg.stats[transaction.stat] - 1),
-        points: Math.max(0, cg.stats.points - transaction.points)
-      }
-      const ncg = { ...cg, stats: nstats }
-      saveCurrentGame(ncg)
-      return ncg
-    })
-    setTransactions(prev => prev.filter(t => t.id !== transactionId))
-    if (lastAction?.id === transactionId) setLastAction(null)
+    forceSaveGames(ng)
+    setEditingGame(null)
+    setViewingGame(null)
+    setView(selectedPlayer ? VIEWS.PLAYER_DETAIL : VIEWS.TEAM_DETAIL)
   }
 
   const exportGame = async (g) => {
     const text = formatExportText(g)
-    try { await navigator.clipboard.writeText(text); setCopiedGameId(g.id); setTimeout(() => setCopiedGameId(null), TIMEOUTS.COPIED_FEEDBACK) } catch (e) { alert(text) }
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedGameId(g.id)
+      setTimeout(() => setCopiedGameId(null), TIMEOUTS.COPIED_FEEDBACK)
+    } catch (e) {
+      alert(text)
+    }
   }
 
   const formatExportText = (game) => {
@@ -360,16 +284,19 @@ export default function App () {
       try {
         const d = JSON.parse(e.target.result)
         if (d.teams && d.games) {
-          setTeams(d.teams); setGames(d.games); saveData('teams', d.teams); saveData('games', d.games); setView(VIEWS.HOME)
-        } else alert('Invalid backup file')
-      } catch (err) { alert('Error reading file') }
+          setTeams(d.teams)
+          setGames(d.games)
+          setView(VIEWS.HOME)
+        } else {
+          alert('Invalid backup file')
+        }
+      } catch (err) {
+        alert('Error reading file')
+      }
     }
     r.readAsText(file)
   }
 
-  // Render split components
-
-  // route
   return (
     <>
       {view === VIEWS.HOME && <HomeView currentGame={currentGame} setView={setView} startQuickGame={startQuickGame} />}
